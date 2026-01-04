@@ -124,6 +124,42 @@ int mdb_get_album_by_title_index(MDB_Context *ctx, int sort_index,
   return mdb_get_album(ctx, real_index, out_album);
 }
 
+// Bulk Access (Optimized for UI lists)
+int mdb_get_artists_bulk(MDB_Context *ctx, int start_index, int count,
+                         DbArtist *out_artists) {
+  if (start_index < 0 ||
+      (uint32_t)(start_index + count) > ctx->header.artist_count)
+    return -1;
+
+  long offset = sizeof(DbHeader) +
+                (sizeof(LetterEntry) * LETTER_INDEX_SIZE * 2) +
+                (start_index * sizeof(DbArtist));
+
+  if (fseek(ctx->file, offset, SEEK_SET) != 0)
+    return -1;
+  if (fread(out_artists, sizeof(DbArtist), count, ctx->file) != (size_t)count)
+    return -2;
+  return 0;
+}
+
+int mdb_get_albums_bulk(MDB_Context *ctx, int start_index, int count,
+                        DbAlbum *out_albums) {
+  if (start_index < 0 ||
+      (uint32_t)(start_index + count) > ctx->header.album_count)
+    return -1;
+
+  long artists_size = ctx->header.artist_count * sizeof(DbArtist);
+  long offset = sizeof(DbHeader) +
+                (sizeof(LetterEntry) * LETTER_INDEX_SIZE * 2) + artists_size;
+  offset += (start_index * sizeof(DbAlbum));
+
+  if (fseek(ctx->file, offset, SEEK_SET) != 0)
+    return -1;
+  if (fread(out_albums, sizeof(DbAlbum), count, ctx->file) != (size_t)count)
+    return -2;
+  return 0;
+}
+
 // String Pool
 int mdb_read_string(MDB_Context *ctx, uint32_t offset, char *buf,
                     size_t max_len) {
