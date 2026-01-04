@@ -1,0 +1,15 @@
+# User specific
+thoughts.txt
+.DS_Store
+testfiles
+
+# Build artifacts
+musicdb_gen
+test_runner
+*.o
+*.dSYM
+music.db
+
+# Editors
+.vscode/
+.idea/
